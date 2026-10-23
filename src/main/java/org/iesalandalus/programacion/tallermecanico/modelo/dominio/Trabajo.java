@@ -125,6 +125,7 @@ public abstract class Trabajo {
         }
         this.horas += horas;
     }
+    //
 
     public boolean estaCerrado() {
         return fechaFin != null;
