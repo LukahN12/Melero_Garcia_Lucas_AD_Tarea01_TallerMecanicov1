@@ -29,7 +29,9 @@ public abstract class Trabajo {
 
     private Cliente cliente;
     private Vehiculo vehiculo;
+    @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate fechaInicio;
+    @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate fechaFin;
     private int horas;
 

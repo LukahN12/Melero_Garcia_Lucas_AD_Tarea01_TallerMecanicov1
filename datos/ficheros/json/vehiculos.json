@@ -1,0 +1,25 @@
+[ {
+  "marca" : "Scania",
+  "modelo" : "Citywide",
+  "matricula" : "1234BCD"
+},
+  {
+    "marca" : "Sear",
+    "modelo" : "Leon",
+    "matricula" : "1111BBB"
+  },
+  {
+  "marca" : "Renault",
+  "modelo" : "Megane",
+  "matricula" : "2222CCC"
+},
+  {
+    "marca" : "Mercedes-Benz",
+    "modelo" : "eSprinter",
+    "matricula" : "3333DDD"
+  },
+  {
+    "marca" : "Seat",
+    "modelo" : "León",
+    "matricula" : "9999ZZZ"
+  } ]

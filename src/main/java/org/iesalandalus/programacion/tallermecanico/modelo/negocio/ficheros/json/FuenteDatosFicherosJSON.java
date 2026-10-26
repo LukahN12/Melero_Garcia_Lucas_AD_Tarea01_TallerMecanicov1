@@ -1,4 +1,4 @@
-package org.iesalandalus.programacion.tallermecanico.modelo.negocio.ficheros.xml.json;
+package org.iesalandalus.programacion.tallermecanico.modelo.negocio.ficheros.json;
 
 import org.iesalandalus.programacion.tallermecanico.modelo.negocio.IClientes;
 import org.iesalandalus.programacion.tallermecanico.modelo.negocio.IFuenteDatos;
