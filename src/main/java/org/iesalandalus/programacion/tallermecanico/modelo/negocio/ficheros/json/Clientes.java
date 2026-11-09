@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.exc.StreamReadException;
 import com.fasterxml.jackson.core.exc.StreamWriteException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DatabindException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.iesalandalus.programacion.tallermecanico.modelo.TallerMecanicoExcepcion;
 import org.iesalandalus.programacion.tallermecanico.modelo.dominio.Cliente;
@@ -17,7 +18,7 @@ import java.util.*;
 
 public class Clientes implements IClientes {
 
-    static File jsonFile = new File("datos/json/clientes.json");
+    static File jsonFile = new File("datos/ficheros/json/clientes.json");
     private static final String RAIZ = "clientes";
     private static final String CLIENTE = "cliente";
     private static final String NOMBRE = "nombre";
@@ -41,37 +42,25 @@ public class Clientes implements IClientes {
 
     @Override
     public void comenzar() {
-
+        // TODO document why this method is empty
     }
 
     private List<Cliente> leer() {
-        Map json = Map.of();
         try
         {
-            // Leer fichero JSON y mapearlo a un Map
-            json = mapper.readValue(jsonFile, Map.class);
-        }
-        catch (StreamReadException e)
-        {
-            System.out.println(" ERROR: El fichero json " + jsonFile.getName() + " presenta errores de sintaxis");
-            System.out.println(e.getMessage());
-        }
-        catch(DatabindException e)
-        {
-            System.out.println("ERROR: El fichero json " + jsonFile.getName() + " presenta errores relacionados con el mapeo.");
-            System.out.println(e.getMessage());
+            JsonNode rootNode = mapper.readTree(jsonFile);
+
+            // Si el JSON es una lista
+            if (rootNode.isArray()) {
+                return mapper.convertValue(rootNode, new TypeReference<List<Cliente>>() {});
+            }
         }
         catch (IOException e)
         {
-            System.out.println(" ERROR de entrada/salida en el fichero " + jsonFile.getName() );
             System.out.println(e.getMessage());
         }
 
-        for (Object cliente1 : json.values()){
-            coleccionClientes.add((Cliente) cliente1);
-        }
-
-        return coleccionClientes;
+        return new ArrayList<>();
     }
 
     @Override
@@ -80,43 +69,39 @@ public class Clientes implements IClientes {
     }
 
     private void escribir(List<Cliente> clientes) {
-        try
-        {
-            mapper.writerWithDefaultPrettyPrinter().writeValue(jsonFile, clientes);
-        }
-        catch ( StreamWriteException e)
-        {
-            System.out.println(" ERROR: El fichero json " + jsonFile.getName() + " presenta errores de sintaxis");
-            System.out.println(e.getMessage());
-        }
-        catch(DatabindException e)
-        {
-            System.out.println("ERROR: El fichero json " + jsonFile.getName() + " presenta errores relacionados con el mapeo.");
-            System.out.println(e.getMessage());
-        }
-        catch (IOException e)
-        {
-            System.out.println(" ERROR de entrada/salida en el fichero " + jsonFile.getName() );
-            System.out.println(e.getMessage());
+        try {
+            if (clientes.size() == 1) {
+                // Si solo hay una persona, escribir como objeto único
+                mapper.writerWithDefaultPrettyPrinter()
+                        .writeValue(jsonFile, clientes.get(0));
+            } else {
+                // Si hay varias, escribir como lista
+                mapper.writerWithDefaultPrettyPrinter()
+                        .writeValue(jsonFile, clientes);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 
     @Override
     public List<Cliente> get() {
-        return new ArrayList<>(coleccionClientes);
+        return leer();
     }
 
     @Override
     public void insertar(Cliente cliente) throws TallerMecanicoExcepcion {
-        Objects.requireNonNull(cliente, "No se puede insertar un cliente nulo.");
-        if (coleccionClientes.contains(cliente)) {
-            throw new TallerMecanicoExcepcion("Ya existe un cliente con ese DNI.");
-        }
-        coleccionClientes.add(cliente);
+        Objects.requireNonNull(cliente, "El cliente no puede ser nulo");
+        List<Cliente> clientes = leer();
+        clientes.add(cliente);
+        escribir(clientes);
     }
 
     @Override
     public Cliente modificar(Cliente cliente, String nombre, String telefono) throws TallerMecanicoExcepcion {
+        Objects.requireNonNull(cliente, "El cliente no puede ser nulo");
+        Objects.requireNonNull(nombre, "El nombre no puede ser nulo");
+        Objects.requireNonNull(telefono, "El telefono no puede ser nulo");
         try
         {
             // Leer el JSON como una lista de objetos Empleado
@@ -164,15 +149,10 @@ public class Clientes implements IClientes {
     }
 
     @Override
-    public void borrar(Cliente cliente) throws TallerMecanicoExcepcion {
-        Objects.requireNonNull(cliente, "No se puede borrar un cliente nulo.");
-        Iterator<Cliente> iterator = coleccionClientes.iterator();
-        while (iterator.hasNext()) {
-            Cliente cliente1 = iterator.next();
-            if (cliente.getDni() == cliente1.getDni()) {
-                iterator.remove();
-            }
-        }
-        coleccionClientes.remove(cliente);
+    public void borrar(Cliente cliente0) throws TallerMecanicoExcepcion {
+        Objects.requireNonNull(cliente0, "El cliente a borrar no puede ser nulo");
+        List<Cliente> clientes = leer();
+        clientes.removeIf(cliente1 -> Objects.equals(cliente1.getDni(), cliente0.getDni()));
+        escribir(clientes);
     }
 }

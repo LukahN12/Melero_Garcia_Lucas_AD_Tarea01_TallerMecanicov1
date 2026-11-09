@@ -2,11 +2,12 @@
   "nombre" : "Bob Esponja",
   "dni" : "11223344B",
   "telefono" : "950112233"
-}
-
-  {
-    "nombre" : "Patricio Estrella",
-    "dni" : "11223344H",
-    "telefono" : "950111111"
-  }
-]
+}, {
+  "nombre" : "Patricio Estrella",
+  "dni" : "11111111H",
+  "telefono" : "950111111"
+}, {
+  "nombre" : "Pepe",
+  "dni" : "95170685C",
+  "telefono" : "123456789"
+} ]

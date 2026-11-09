@@ -2,9 +2,12 @@ package org.iesalandalus.programacion.tallermecanico.modelo.negocio.ficheros.jso
 
 import com.fasterxml.jackson.core.exc.StreamReadException;
 import com.fasterxml.jackson.core.exc.StreamWriteException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DatabindException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.iesalandalus.programacion.tallermecanico.modelo.TallerMecanicoExcepcion;
+import org.iesalandalus.programacion.tallermecanico.modelo.dominio.Cliente;
 import org.iesalandalus.programacion.tallermecanico.modelo.dominio.Vehiculo;
 import org.iesalandalus.programacion.tallermecanico.modelo.negocio.IVehiculos;
 import org.w3c.dom.Document;
@@ -20,7 +23,7 @@ import java.util.Map;
 import java.util.Objects;
 
 public class Vehiculos implements IVehiculos {
-    static File jsonFile = new File("datos/json/vehiculos.json");
+    static File jsonFile = new File("datos/ficheros/json/vehiculos.json");
     private static final String RAIZ = "vehiculos";
     private static final String VEHICULO = "vehiculo";
     private static final String MARCA = "marca";
@@ -48,24 +51,18 @@ public class Vehiculos implements IVehiculos {
     }
 
     private void escribir(List<Vehiculo> vehiculos) {
-        try
-        {
-            mapper.writerWithDefaultPrettyPrinter().writeValue(jsonFile, vehiculos);
-        }
-        catch ( StreamWriteException e)
-        {
-            System.out.println(" ERROR: El fichero json " + jsonFile.getName() + " presenta errores de sintaxis");
-            System.out.println(e.getMessage());
-        }
-        catch(DatabindException e)
-        {
-            System.out.println("ERROR: El fichero json " + jsonFile.getName() + " presenta errores relacionados con el mapeo.");
-            System.out.println(e.getMessage());
-        }
-        catch (IOException e)
-        {
-            System.out.println(" ERROR de entrada/salida en el fichero " + jsonFile.getName() );
-            System.out.println(e.getMessage());
+        try {
+            if (vehiculos.size() == 1) {
+                // Si solo hay una persona, escribir como objeto único
+                mapper.writerWithDefaultPrettyPrinter()
+                        .writeValue(jsonFile, vehiculos.get(0));
+            } else {
+                // Si hay varias, escribir como lista
+                mapper.writerWithDefaultPrettyPrinter()
+                        .writeValue(jsonFile, vehiculos);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 
@@ -82,47 +79,32 @@ public class Vehiculos implements IVehiculos {
     }
 
     private List<Vehiculo> leer() {
-        Map json = Map.of();
-        try
-        {
-            // Leer fichero JSON y mapearlo a un Map
-            json = mapper.readValue(jsonFile, Map.class);
-        }
-        catch (StreamReadException e)
-        {
-            System.out.println(" ERROR: El fichero json " + jsonFile.getName() + " presenta errores de sintaxis");
-            System.out.println(e.getMessage());
-        }
-        catch(DatabindException e)
-        {
-            System.out.println("ERROR: El fichero json " + jsonFile.getName() + " presenta errores relacionados con el mapeo.");
-            System.out.println(e.getMessage());
+        try {
+            JsonNode rootNode = mapper.readTree(jsonFile);
+
+            // Si el JSON es una lista
+            if (rootNode.isArray()) {
+                return mapper.convertValue(rootNode, new TypeReference<List<Vehiculo>>() {});
+            }
         }
         catch (IOException e)
         {
-            System.out.println(" ERROR de entrada/salida en el fichero " + jsonFile.getName() );
             System.out.println(e.getMessage());
         }
 
-        for (Object vehiculo1 : json.values()){
-            coleccionVehiculos.add((Vehiculo) vehiculo1);
-        }
-
-        return coleccionVehiculos;
+        return new ArrayList<>();
     }
 
     @Override
     public List<Vehiculo> get() {
-        return new ArrayList<>(coleccionVehiculos);
+        return leer();
     }
 
     @Override
     public void insertar(Vehiculo vehiculo) throws TallerMecanicoExcepcion {
-        Objects.requireNonNull(vehiculo, "No se puede insertar un vehículo nulo.");
-        if (coleccionVehiculos.contains(vehiculo)) {
-            throw new TallerMecanicoExcepcion("Ya existe un vehículo con esa matrícula.");
-        }
-        coleccionVehiculos.add(vehiculo);
+        List<Vehiculo> vehiculos = leer();
+        vehiculos.add(vehiculo);
+        escribir(vehiculos);
     }
 
     @Override
@@ -134,10 +116,8 @@ public class Vehiculos implements IVehiculos {
 
     @Override
     public void borrar(Vehiculo vehiculo) throws TallerMecanicoExcepcion {
-        Objects.requireNonNull(vehiculo, "No se puede borrar un vehículo nulo.");
-        if (!coleccionVehiculos.contains(vehiculo)) {
-            throw new TallerMecanicoExcepcion("No existe ningún vehículo con esa matrícula.");
-        }
-        coleccionVehiculos.remove(vehiculo);
+        List<Vehiculo> vehiculos = leer();
+        vehiculos.removeIf(vehiculo1 -> Objects.equals((vehiculo1.matricula()), vehiculo.matricula()));
+        escribir(vehiculos);
     }
 }

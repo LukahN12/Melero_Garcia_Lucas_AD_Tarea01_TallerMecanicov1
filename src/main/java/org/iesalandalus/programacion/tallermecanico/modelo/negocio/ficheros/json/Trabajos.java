@@ -2,7 +2,9 @@ package org.iesalandalus.programacion.tallermecanico.modelo.negocio.ficheros.jso
 
 import com.fasterxml.jackson.core.exc.StreamReadException;
 import com.fasterxml.jackson.core.exc.StreamWriteException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DatabindException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.iesalandalus.programacion.tallermecanico.modelo.TallerMecanicoExcepcion;
 import org.iesalandalus.programacion.tallermecanico.modelo.dominio.*;
@@ -25,7 +27,7 @@ import java.util.*;
 
 public class Trabajos implements ITrabajos {
 
-    static File jsonFile = new File("datos/json/trabajos.json");
+    static File jsonFile = new File("datos/ficheros/json/trabajos.json");
     private static final DateTimeFormatter FORMATO_FECHA = DateTimeFormatter.ofPattern("dd/MM/yyyy");
     private static final String RAIZ = "trabajos";
     private static final String TRABAJO = "trabajo";
@@ -59,25 +61,19 @@ public class Trabajos implements ITrabajos {
 
     }
 
-    private void escribir(List<Trabajos> trabajos) {
-        try
-        {
-            mapper.writerWithDefaultPrettyPrinter().writeValue(jsonFile, trabajos);
-        }
-        catch ( StreamWriteException e)
-        {
-            System.out.println(" ERROR: El fichero json " + jsonFile.getName() + " presenta errores de sintaxis");
-            System.out.println(e.getMessage());
-        }
-        catch(DatabindException e)
-        {
-            System.out.println("ERROR: El fichero json " + jsonFile.getName() + " presenta errores relacionados con el mapeo.");
-            System.out.println(e.getMessage());
-        }
-        catch (IOException e)
-        {
-            System.out.println(" ERROR de entrada/salida en el fichero " + jsonFile.getName() );
-            System.out.println(e.getMessage());
+    private void escribir(List<Trabajo> trabajos) {
+        try {
+            if (trabajos.size() == 1) {
+                // Si solo hay una persona, escribir como objeto único
+                mapper.writerWithDefaultPrettyPrinter()
+                        .writeValue(jsonFile, trabajos.getFirst());
+            } else {
+                // Si hay varias, escribir como lista
+                mapper.writerWithDefaultPrettyPrinter()
+                        .writeValue(jsonFile, trabajos);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 
@@ -114,43 +110,31 @@ public class Trabajos implements ITrabajos {
     }
 
     private List<Trabajo> leer() {
-        Map json = Map.of();
         try
         {
-            // Leer fichero JSON y mapearlo a un Map
-            json = mapper.readValue(jsonFile, Map.class);
-        }
-        catch (StreamReadException e)
-        {
-            System.out.println(" ERROR: El fichero json " + jsonFile.getName() + " presenta errores de sintaxis");
-            System.out.println(e.getMessage());
-        }
-        catch(DatabindException e)
-        {
-            System.out.println("ERROR: El fichero json " + jsonFile.getName() + " presenta errores relacionados con el mapeo.");
-            System.out.println(e.getMessage());
+            JsonNode rootNode = mapper.readTree(jsonFile);
+
+            // Si el JSON es una lista
+            if (rootNode.isArray()) {
+                return mapper.convertValue(rootNode, new TypeReference<List<Trabajo>>() {});
+            }
         }
         catch (IOException e)
         {
-            System.out.println(" ERROR de entrada/salida en el fichero " + jsonFile.getName() );
             System.out.println(e.getMessage());
         }
 
-        for (Object trabajo1 : json.values()){
-            coleccionTrabajos.add((Trabajo) trabajo1);
-        }
-
-        return coleccionTrabajos;
+        return new ArrayList<>();
     }
 
     @Override
     public List<Trabajo> get() {
-        return new ArrayList<>(coleccionTrabajos);
+        return leer();
     }
 
     @Override
     public List<Trabajo> get(Cliente cliente) {
-        List<Trabajo> trabajosCliente = new ArrayList<>();
+        List<Trabajo> trabajosCliente = leer();
         for (Trabajo Trabajo : coleccionTrabajos) {
             if (Trabajo.getCliente().equals(cliente)) {
                 trabajosCliente.add(Trabajo);
@@ -161,7 +145,7 @@ public class Trabajos implements ITrabajos {
 
     @Override
     public List<Trabajo> get(Vehiculo vehiculo) {
-        List<Trabajo> trabajosVehiculo = new ArrayList<>();
+        List<Trabajo> trabajosVehiculo = leer();
         for (Trabajo Trabajo : coleccionTrabajos) {
             if (Trabajo.getVehiculo().equals(vehiculo)) {
                 trabajosVehiculo.add(Trabajo);
@@ -194,9 +178,11 @@ public class Trabajos implements ITrabajos {
 
     @Override
     public void insertar(Trabajo trabajo) throws TallerMecanicoExcepcion {
-        Objects.requireNonNull(trabajo, "No se puede insertar un trabajo nulo.");
-        comprobarTrabajo(trabajo.getCliente(), trabajo.getVehiculo(), trabajo.getFechaInicio());
-        coleccionTrabajos.add(trabajo);
+        Objects.requireNonNull(trabajo, "El trabajo no puede ser nulo");
+        comprobarTrabajo(trabajo.getCliente(),trabajo.getVehiculo(),trabajo.getFechaInicio());
+        List<Trabajo> trabajos = leer();
+        trabajos.add(trabajo);
+        escribir(trabajos);
     }
 
     private void comprobarTrabajo(Cliente cliente, Vehiculo vehiculo, LocalDate fechaInicio) throws TallerMecanicoExcepcion {
@@ -270,10 +256,8 @@ public class Trabajos implements ITrabajos {
 
     @Override
     public void borrar(Trabajo trabajo) throws TallerMecanicoExcepcion {
-        Objects.requireNonNull(trabajo, "No se puede borrar un trabajo nulo.");
-        if (!coleccionTrabajos.contains(trabajo)) {
-            throw new TallerMecanicoExcepcion("No existe ningún trabajo igual.");
-        }
-        coleccionTrabajos.remove(trabajo);
+        List<Trabajo> trabajos = leer();
+        trabajos.removeIf(trabajo1 -> Objects.equals(trabajo1.getCliente(), trabajo.getCliente()));
+        escribir(trabajos);
     }
 }
