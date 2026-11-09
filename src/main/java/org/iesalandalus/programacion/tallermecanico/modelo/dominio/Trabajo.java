@@ -14,12 +14,13 @@ import java.util.Objects;
 @JsonTypeInfo(
         use = JsonTypeInfo.Id.NAME,
         include = JsonTypeInfo.As.PROPERTY,
-        property = "Clave1"
+        property = "tipo"
 )
 
 @JsonSubTypes({
-        @JsonSubTypes.Type(value = Mecanico.class, name = "Mecanico"),
-        @JsonSubTypes.Type(value = Revision.class, name = "Revision")
+        @JsonSubTypes.Type(value = Revision.class, name = "Revision"),
+        @JsonSubTypes.Type(value = Mecanico.class, name = "Mecanico")
+
 })
 
 
