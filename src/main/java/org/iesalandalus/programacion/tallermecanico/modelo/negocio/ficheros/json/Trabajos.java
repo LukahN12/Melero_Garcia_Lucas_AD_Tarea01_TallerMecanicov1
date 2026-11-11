@@ -40,7 +40,7 @@ public class Trabajos implements ITrabajos {
     private static final String TIPO = "tipo";
     private static final String REVISION = "revision";
     private static final String MECANICO = "mecanico";
-    ObjectMapper mapper = new ObjectMapper();
+    ObjectMapper mapper = JsonUtils.creadorMapas();
 
     private final List<Trabajo> coleccionTrabajos;
     private static Trabajos instancia;

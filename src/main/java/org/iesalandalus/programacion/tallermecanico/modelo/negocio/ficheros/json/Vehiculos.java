@@ -29,7 +29,7 @@ public class Vehiculos implements IVehiculos {
     private static final String MARCA = "marca";
     private static final String MODELO = "modelo";
     private static final String MATRICULA = "matricula";
-    ObjectMapper mapper = new ObjectMapper();
+    ObjectMapper mapper = JsonUtils.creadorMapas();
 
     private final List<Vehiculo> coleccionVehiculos;
     private static Vehiculos instancia;
