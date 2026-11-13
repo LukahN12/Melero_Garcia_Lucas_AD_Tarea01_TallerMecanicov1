@@ -153,6 +153,7 @@ public abstract class Trabajo {
         return (estaCerrado()) ? (int) ChronoUnit.DAYS.between(fechaInicio, fechaFin) : 0;
     }
 
+    @JsonIgnore
     public abstract float getPrecioEspecifico();
 
     @Override

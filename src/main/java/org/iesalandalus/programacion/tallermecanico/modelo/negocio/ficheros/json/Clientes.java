@@ -25,8 +25,7 @@ public class Clientes implements IClientes {
     private static final String DNI = "dni";
     private static final String TELEFONO = "telefono";
     ObjectMapper mapper = JsonUtils.creadorMapas();
-
-    private final List<Cliente> coleccionClientes;
+    private List<Cliente> coleccionClientes;
     private static Clientes instancia;
 
     private Clientes() {
@@ -144,6 +143,7 @@ public class Clientes implements IClientes {
     @Override
     public Cliente buscar(Cliente cliente) {
         Objects.requireNonNull(cliente, "No se puede buscar un cliente nulo.");
+        coleccionClientes = leer();
         int indice = coleccionClientes.indexOf(cliente);
         return (indice == -1) ? null : coleccionClientes.get(indice);
     }

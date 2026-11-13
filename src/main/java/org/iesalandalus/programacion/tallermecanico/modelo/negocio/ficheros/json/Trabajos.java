@@ -6,6 +6,8 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DatabindException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
+import com.fasterxml.jackson.databind.type.TypeFactory;
 import org.iesalandalus.programacion.tallermecanico.modelo.TallerMecanicoExcepcion;
 import org.iesalandalus.programacion.tallermecanico.modelo.dominio.*;
 import org.iesalandalus.programacion.tallermecanico.modelo.negocio.ITrabajos;
@@ -20,6 +22,7 @@ import org.w3c.dom.NodeList;
 import javax.xml.parsers.DocumentBuilder;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
@@ -28,21 +31,8 @@ import java.util.*;
 public class Trabajos implements ITrabajos {
 
     static File jsonFile = new File("datos/ficheros/json/trabajos.json");
-    private static final DateTimeFormatter FORMATO_FECHA = DateTimeFormatter.ofPattern("dd/MM/yyyy");
-    private static final String RAIZ = "trabajos";
-    private static final String TRABAJO = "trabajo";
-    private static final String CLIENTE = "cliente";
-    private static final String VEHICULO = "vehiculo";
-    private static final String FECHA_INICIO = "fechaInicio";
-    private static final String FECHA_FIN = "fechaFin";
-    private static final String HORAS = "horas";
-    private static final String PRECIO_MATERIAL = "precioMaterial";
-    private static final String TIPO = "tipo";
-    private static final String REVISION = "revision";
-    private static final String MECANICO = "mecanico";
     ObjectMapper mapper = JsonUtils.creadorMapas();
-
-    private final List<Trabajo> coleccionTrabajos;
+    private List<Trabajo> coleccionTrabajos;
     private static Trabajos instancia;
 
     private Trabajos() {
@@ -63,45 +53,16 @@ public class Trabajos implements ITrabajos {
 
     private void escribir(List<Trabajo> trabajos) {
         try {
-            if (trabajos.size() == 1) {
-                // Si solo hay una persona, escribir como objeto único
-                mapper.writerWithDefaultPrettyPrinter()
-                        .writeValue(jsonFile, trabajos.getFirst());
-            } else {
-                // Si hay varias, escribir como lista
-                mapper.writerWithDefaultPrettyPrinter()
-                        .writeValue(jsonFile, trabajos);
-            }
+            ObjectWriter writer = mapper.writerFor(
+                    new TypeReference<List<Trabajo>>() {}
+            ).withDefaultPrettyPrinter();
+
+            writer.writeValue(jsonFile, trabajos);
+
+
         } catch (IOException e) {
             e.printStackTrace();
         }
-    }
-
-    private Trabajo getTrabajo(Element elemento) throws TallerMecanicoExcepcion {
-        Cliente cliente = Cliente.get(elemento.getAttribute(CLIENTE));
-        cliente = Clientes.getInstancia().buscar(cliente);
-        Vehiculo vehiculo = Vehiculo.get(elemento.getAttribute(VEHICULO));
-        vehiculo = Vehiculos.getInstancia().buscar(vehiculo);
-        LocalDate fechaInicio = LocalDate.parse(elemento.getAttribute(FECHA_INICIO), FORMATO_FECHA);
-        String tipo = elemento.getAttribute(TIPO);
-        Trabajo trabajo = null;
-        if (tipo.equals(REVISION)) {
-            trabajo = new Revision(cliente, vehiculo, fechaInicio);
-        } else if (tipo.equals(MECANICO)) {
-            trabajo = new Mecanico(cliente, vehiculo, fechaInicio);
-            if (elemento.hasAttribute(PRECIO_MATERIAL)) {
-                ((Mecanico) trabajo).anadirPrecioMaterial(Float.parseFloat(elemento.getAttribute(PRECIO_MATERIAL)));
-            }
-        }
-        if (elemento.hasAttribute(HORAS) && trabajo != null) {
-            int horas = Integer.parseInt(elemento.getAttribute(HORAS));
-            trabajo.anadirHoras(horas);
-        }
-        if (elemento.hasAttribute(FECHA_FIN) && trabajo != null) {
-            LocalDate fechaFin = LocalDate.parse(elemento.getAttribute(FECHA_FIN), FORMATO_FECHA);
-            trabajo.cerrar(fechaFin);
-        }
-        return trabajo;
     }
 
     @Override
@@ -112,12 +73,8 @@ public class Trabajos implements ITrabajos {
     private List<Trabajo> leer() {
         try
         {
-            JsonNode rootNode = mapper.readTree(jsonFile);
+            return mapper.readValue(jsonFile, new TypeReference<>() {});
 
-            // Si el JSON es una lista
-            if (rootNode.isArray()) {
-                return mapper.convertValue(rootNode, new TypeReference<List<Trabajo>>() {});
-            }
         }
         catch (IOException e)
         {
@@ -135,23 +92,23 @@ public class Trabajos implements ITrabajos {
     @Override
     public List<Trabajo> get(Cliente cliente) {
         List<Trabajo> trabajosCliente = leer();
-        for (Trabajo Trabajo : coleccionTrabajos) {
+        for (Trabajo Trabajo : trabajosCliente) {
             if (Trabajo.getCliente().equals(cliente)) {
-                trabajosCliente.add(Trabajo);
+                coleccionTrabajos.add(Trabajo);
             }
         }
-        return trabajosCliente;
+        return coleccionTrabajos;
     }
 
     @Override
     public List<Trabajo> get(Vehiculo vehiculo) {
         List<Trabajo> trabajosVehiculo = leer();
-        for (Trabajo Trabajo : coleccionTrabajos) {
+        for (Trabajo Trabajo : trabajosVehiculo) {
             if (Trabajo.getVehiculo().equals(vehiculo)) {
-                trabajosVehiculo.add(Trabajo);
+                coleccionTrabajos.add(Trabajo);
             }
         }
-        return trabajosVehiculo;
+        return coleccionTrabajos;
     }
 
     @Override
@@ -214,6 +171,7 @@ public class Trabajos implements ITrabajos {
     private Trabajo getTrabajoAbierto(Vehiculo vehiculo) throws TallerMecanicoExcepcion {
         Objects.requireNonNull(vehiculo, "No puedo operar sobre un vehículo nulo.");
         Trabajo trabajoEncontrado = null;
+        coleccionTrabajos = leer();
         Iterator<Trabajo> iteradorTrabajos = coleccionTrabajos.iterator();
         while (iteradorTrabajos.hasNext() && trabajoEncontrado == null) {
             Trabajo trabajo = iteradorTrabajos.next();
@@ -250,6 +208,7 @@ public class Trabajos implements ITrabajos {
     @Override
     public Trabajo buscar(Trabajo trabajo) {
         Objects.requireNonNull(trabajo, "No se puede buscar un trabajo nulo.");
+        coleccionTrabajos = leer();
         int indice = coleccionTrabajos.indexOf(trabajo);
         return (indice == -1) ? null : coleccionTrabajos.get(indice);
     }

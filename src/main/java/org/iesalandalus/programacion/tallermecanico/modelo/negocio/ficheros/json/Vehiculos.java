@@ -31,7 +31,7 @@ public class Vehiculos implements IVehiculos {
     private static final String MATRICULA = "matricula";
     ObjectMapper mapper = JsonUtils.creadorMapas();
 
-    private final List<Vehiculo> coleccionVehiculos;
+    private List<Vehiculo> coleccionVehiculos;
     private static Vehiculos instancia;
 
     private Vehiculos() {
@@ -110,6 +110,7 @@ public class Vehiculos implements IVehiculos {
     @Override
     public Vehiculo buscar(Vehiculo vehiculo) {
         Objects.requireNonNull(vehiculo, "No se puede buscar un vehículo nulo.");
+        coleccionVehiculos = leer();
         int indice = coleccionVehiculos.indexOf(vehiculo);
         return (indice == -1) ? null : coleccionVehiculos.get(indice);
     }
