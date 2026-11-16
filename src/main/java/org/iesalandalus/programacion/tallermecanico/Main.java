@@ -26,6 +26,8 @@ public class Main {
                 fabricaFuenteDatos = FabricaFuenteDatos.FICHEROS_XML;
             } else if (argumento.equalsIgnoreCase("-fdficherosjson")) {
                 fabricaFuenteDatos = FabricaFuenteDatos.FICHEROS_JSON;
+            } else if (argumento.equalsIgnoreCase("-fdmysql")) {
+                fabricaFuenteDatos = FabricaFuenteDatos.MYSQL;
             }else {
                 fabricaFuenteDatos = FabricaFuenteDatos.FICHEROS_JSON;
             }

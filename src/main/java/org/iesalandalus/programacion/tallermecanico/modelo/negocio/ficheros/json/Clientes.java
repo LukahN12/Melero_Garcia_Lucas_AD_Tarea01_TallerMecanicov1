@@ -19,11 +19,6 @@ import java.util.*;
 public class Clientes implements IClientes {
 
     static File jsonFile = new File("datos/ficheros/json/clientes.json");
-    private static final String RAIZ = "clientes";
-    private static final String CLIENTE = "cliente";
-    private static final String NOMBRE = "nombre";
-    private static final String DNI = "dni";
-    private static final String TELEFONO = "telefono";
     ObjectMapper mapper = JsonUtils.creadorMapas();
     private List<Cliente> coleccionClientes;
     private static Clientes instancia;
