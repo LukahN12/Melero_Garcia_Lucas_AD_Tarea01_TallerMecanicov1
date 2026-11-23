@@ -62,7 +62,6 @@ public class Clientes implements IClientes {
 
     @Override
     public void insertar(Cliente cliente) throws TallerMecanicoExcepcion {
-        int cantidad = 0;
         if (buscar(cliente) != null) {
             System.out.println("El cliente a insertar existe: " + cliente.getDni());
         } else {
@@ -85,11 +84,13 @@ public class Clientes implements IClientes {
 
     @Override
     public Cliente modificar(Cliente cliente, String nombre, String telefono) throws TallerMecanicoExcepcion {
-        String sql = "UPDATE clientes set nombre " + nombre + " telefono " + telefono + "  where dni = " + cliente.getDni();
+        String sql = "UPDATE clientes set nombre = ? telefono = ? where dni = ?";
         try {
-            System.out.println("Sentencia: " + sql);
-            Statement sentencia = conexion.createStatement();
-            int filas = sentencia.executeUpdate(sql);
+            PreparedStatement sentencia = conexion.prepareStatement(sql);
+            sentencia.setString(1, nombre);
+            sentencia.setString(2, nombre);
+            sentencia.setString(3, cliente.getDni());
+            int filas = sentencia.executeUpdate();
             System.out.println("Actualizados:" + filas);
             sentencia.close();
         } catch (SQLException e) {
@@ -97,23 +98,7 @@ public class Clientes implements IClientes {
             System.out.println(e.getMessage());
         }
 
-        String sql2 = "SELECT * From cliente where dni = " + cliente.getDni();
-        Cliente resultadoCliente = null;
-        try {
-            PreparedStatement sentencia = (PreparedStatement) conexion.prepareStatement(sql2);
-
-            sentencia.setInt(1, 10);
-            ResultSet resultado = sentencia.executeQuery();
-            while (resultado.next()) {
-               resultadoCliente = Cliente.get(resultado.getString(2));
-            }
-            resultado.close();
-
-            sentencia.close();
-        } catch (SQLException e) {
-
-            System.out.println(e.getMessage());
-        }
+        Cliente resultadoCliente = buscar(cliente);
 
         return resultadoCliente;
     }
