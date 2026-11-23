@@ -7,18 +7,20 @@ import org.iesalandalus.programacion.tallermecanico.modelo.dominio.Trabajo;
 import org.iesalandalus.programacion.tallermecanico.modelo.dominio.Vehiculo;
 import org.iesalandalus.programacion.tallermecanico.modelo.negocio.ITrabajos;
 
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 public class Trabajos implements ITrabajos {
-
-    private List<Trabajo> coleccionTrabajos;
     private static Trabajos instancia;
+    private Connection conexion;
 
     private Trabajos() {
-        coleccionTrabajos = new ArrayList<>();
     }
 
     public static Trabajos getInstancia() {
@@ -30,17 +32,36 @@ public class Trabajos implements ITrabajos {
 
     @Override
     public void comenzar() {
-
+        conexion = MySQL.getConnection();
     }
 
     @Override
     public void terminar() {
-
+        MySQL.cerrarConexion();
     }
 
     @Override
     public List<Trabajo> get() {
-        return List.of();
+        if (conexion == null){
+            System.out.println("ES NULA!");
+        }
+
+        List<Trabajo> listaTrabajo = new ArrayList<>();
+        String sql = "SELECT * FROM trabajo";
+
+        try {
+            Statement sentencia = conexion.createStatement();
+            ResultSet resultado = sentencia.executeQuery(sql);
+            while (resultado.next()) {
+            }
+            resultado.close();
+            sentencia.close();
+        }
+        catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
+
+        return listaTrabajo;
     }
 
     @Override

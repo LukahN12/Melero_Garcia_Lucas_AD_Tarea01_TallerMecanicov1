@@ -5,7 +5,7 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 
 public class MySQL {
-    private static final String HOST = "174.129.78.34";
+    private static final String HOST = "54.82.227.74";
     private static final String ESQUEMA = "tallerMecanico";
     private static final String USUARIO = "root";
     private static final String CONTRASENA = "root";
